@@ -1,13 +1,39 @@
 # task-manager-api
 
-API de Task Manager em Python/Flask usada como entrada do desafio `refactor-arch`. Diferente dos outros projetos, este já possui alguma separação de camadas (`models/`, `routes/`, `services/`, `utils/`), mas ainda contém problemas arquiteturais e de qualidade.
+API RESTful em Python com Flask para gerenciamento de tarefas, usuários e relatórios.
 
-## Como rodar
+## Estrutura do Projeto:
+
+*   **`app.py`**: Ponto de entrada da aplicação Flask. Configura a aplicação, inicializa o SQLAlchemy, registra os Blueprints de rotas (`task_routes`, `user_routes`, `report_routes`) e define rotas básicas (`/health`, `/`).
+*   **`database.py`**: Configura a conexão com o banco de dados SQLite (`tasks.db`) usando Flask-SQLAlchemy.
+*   **`models/`**: Define os modelos de dados (ORM) com SQLAlchemy:
+    *   `task.py`: Modelo para tarefas (título, descrição, status, prioridade, usuário, categoria, datas, tags).
+    *   `user.py`: Modelo para usuários (nome, email, senha, papel, status).
+    *   `category.py`: Modelo para categorias de tarefas (nome, descrição, cor).
+*   **`routes/`**: Blueprints que definem as rotas relacionadas a cada entidade:
+    *   `task_routes.py`: Operações de CRUD para tarefas, busca e estatísticas.
+    *   `user_routes.py`: Rotas para usuários (registro, login, atualização, deleção).
+    *   `report_routes.py`: Endpoints para relatórios de resumo, relatórios por usuário e gerenciamento de categorias.
+*   **`services/`**: Contém a lógica para envio de notificações por email (simuladas).
+*   **`utils/`**: Funções utilitárias genéricas.
+*   **`requirements.txt`**: Lista as dependências Python (Flask, Flask-SQLAlchemy, Marshmallow, etc.).
+*   **`seed.py`**: Script para popular o banco de dados com dados iniciais.
+
+## Função da Aplicação:
+
+A API gerencia um sistema de gerenciamento de tarefas, permitindo:
+
+*   **Tarefas**: Criar, visualizar, atualizar, deletar, buscar e obter estatísticas sobre tarefas.
+*   **Usuários**: Registrar, logar, gerenciar perfis e associar tarefas a usuários.
+*   **Categorias**: Gerenciar categorias para organizar tarefas.
+*   **Relatórios**: Gerar relatórios consolidados sobre tarefas, usuários e atividades.
+*   **Notificações**: Simula envio de emails para notificações.
+
+## Como Rodar:
 
 ```bash
 pip install -r requirements.txt
-python seed.py
 python app.py
 ```
 
-A aplicação sobe em `http://localhost:5000`. O `seed.py` popula o banco SQLite (`tasks.db`) com usuários, categorias e tasks de exemplo — **rode-o antes do primeiro boot**, caso contrário os endpoints vão retornar listas vazias.
+A aplicação roda em `http://localhost:5000`.
