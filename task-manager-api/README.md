@@ -29,6 +29,18 @@ A API gerencia um sistema de gerenciamento de tarefas, permitindo:
 *   **Relatórios**: Gerar relatórios consolidados sobre tarefas, usuários e atividades.
 *   **Notificações**: Simula envio de emails para notificações.
 
+## Análise Manual de Problemas (Conforme Requisitos Mínimos do README):
+
+*   **CRITICAL:**
+    *   `models/user.py`: Uso de `hashlib.md5` para senhas, um algoritmo de hash obsoleto e inseguro.
+*   **HIGH:**
+    *   `routes/task_routes.py`: Validações duplicadas para status e prioridade de tarefas.
+*   **MEDIUM:**
+    *   `app.py`: `SECRET_KEY` hardcoded.
+    *   `routes/user_routes.py`: O endpoint `/login` retorna o hash da senha no objeto `user`.
+*   **LOW:**
+    *   `models/task.py`: O método `is_overdue` não considera timezone, o que pode causar imprecisões.
+
 ## Como Rodar:
 
 ```bash

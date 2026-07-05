@@ -23,11 +23,17 @@ A API gerencia um sistema de e-commerce com as seguintes funcionalidades:
 
 Este projeto é intencionalmente projetado com várias práticas de código que podem ser consideradas "code smells" ou problemas de arquitetura, como validações repetitivas, manipulação direta de SQL, lógica de negócio misturada com controle de rotas, e credenciais hardcoded, visando ser um bom candidato para o desafio de refatoração.
 
-*   **Problemas Identificados (Análise Manual):**
-    *   **CRITICAL:** `SECRET_KEY` hardcoded em `app.py`, manipulação de SQL direta e falta de ORM robusto em `models.py`, lógica de negócio em `controllers.py` misturada com roteamento, `debug=True` em `app.py` implícito, credenciais de banco de dados hardcoded em `database.py`.
-    *   **HIGH:** Repetição de validações em `controllers.py`, falta de separação de camadas em `models.py`, ausência de pool de conexões em `database.py`.
-    *   **MEDIUM:** Uso de `print` para logs em `controllers.py`, `get_db()` retornando conexão global sem gerenciamento explícito.
-    *   **LOW:** Mensagem de root estática em `app.py`.
+## Análise Manual de Problemas (Conforme Requisitos Mínimos do README):
+
+*   **CRITICAL:**
+    *   `app.py`: `SECRET_KEY` hardcoded.
+*   **HIGH:**
+    *   `controllers.py`: Contém toda a lógica de negócio para produtos, usuários, pedidos e relatórios, violando a separação de responsabilidades.
+*   **MEDIUM:**
+    *   `app.py`: `debug=True` implícito em ambiente de produção, sem configuração de ambiente.
+    *   `controllers.py`: Uso de `print` para logs em vez de um sistema de logging configurado.
+*   **LOW:**
+    *   `README.md`: Informações básicas, mas sem detalhes sobre a arquitetura ou setup complexo.
 
 ## Como Rodar:
 

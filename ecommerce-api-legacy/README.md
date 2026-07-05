@@ -25,6 +25,18 @@ A API oferece funcionalidades para:
 
 Este projeto exemplifica múltiplos "code smells" e problemas de arquitetura/segurança, incluindo credenciais sensíveis hardcoded, criptografia fraca, lógica de negócio centralizada em uma única classe (`AppManager`), callbacks aninhados, e tratamento inadequado de deleção de dados.
 
+## Análise Manual de Problemas (Conforme Requisitos Mínimos do README):
+
+*   **CRITICAL:**
+    *   `utils.js`: Credenciais sensíveis (banco de dados, gateway de pagamento, SMTP) hardcoded.
+*   **HIGH:**
+    *   `AppManager.js`: Função `processPaymentAndEnroll` com alta coesão (mistura de responsabilidades), levando a um código difícil de manter e testar.
+*   **MEDIUM:**
+    *   `AppManager.js`: Uso de callbacks aninhados ("callback hell") no endpoint `/api/admin/financial-report`, prejudicando a legibilidade.
+    *   `utils.js`: Cache global (`globalCache`) sem estratégia de invalidação.
+*   **LOW:**
+    *   `README.md`: Documentação muito básica.
+
 ## Como Rodar:
 
 ```bash
