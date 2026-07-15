@@ -23,17 +23,24 @@ A API gerencia um sistema de e-commerce com as seguintes funcionalidades:
 
 Este projeto é intencionalmente projetado com várias práticas de código que podem ser consideradas "code smells" ou problemas de arquitetura, como validações repetitivas, manipulação direta de SQL, lógica de negócio misturada com controle de rotas, e credenciais hardcoded, visando ser um bom candidato para o desafio de refatoração.
 
-## Análise Manual de Problemas (Conforme Requisitos Mínimos do README):
+## Análise Manual de Problemas
 
-*   **CRITICAL:**
-    *   `app.py`: `SECRET_KEY` hardcoded.
-*   **HIGH:**
-    *   `controllers.py`: Contém toda a lógica de negócio para produtos, usuários, pedidos e relatórios, violando a separação de responsabilidades.
-*   **MEDIUM:**
-    *   `app.py`: `debug=True` implícito em ambiente de produção, sem configuração de ambiente.
-    *   `controllers.py`: Uso de `print` para logs em vez de um sistema de logging configurado.
-*   **LOW:**
-    *   `README.md`: Informações básicas, mas sem detalhes sobre a arquitetura ou setup complexo.
+Identificamos os seguintes problemas de arquitetura e qualidade no projeto, classificados por severidade:
+
+- **CRITICAL:**
+    - `app.py`: `SECRET_KEY` hardcoded ('minha-chave-super-secreta-123'), expondo a aplicação a riscos de segurança.
+    - `models.py`: Vulnerabilidade crítica de SQL Injection em todos os métodos (`get_produto_por_id`, `criar_produto`, `login_usuario`, etc.) devido à concatenação direta de strings.
+    - `app.py`: Endpoint `/admin/query` permite a execução de queries SQL arbitrárias pelo cliente, um risco de segurança extremo.
+- **HIGH:**
+    - `controllers.py`: Padrão "God Class/Fat Controller", onde toda a lógica de negócio, validação e roteamento para quatro domínios está concentrada em um único arquivo.
+    - `app.py`: Inicialização da aplicação com `debug=True` ativado, o que expõe stack traces detalhados em caso de erro em produção.
+- **MEDIUM:**
+    - `models.py`: Problema de performance do tipo "N+1 Queries" nos métodos `get_pedidos_usuario` e `get_todos_pedidos`, executando queries repetitivas em loops.
+    - `models.py`: Falta de hash seguro para senhas no método `login_usuario`, armazenando ou comparando senhas em texto puro.
+    - `controllers.py`: Tratamento de erros inconsistente, usando `try/except` genérico que retorna `Exception` como string para o cliente, expondo detalhes da estrutura interna.
+- **LOW:**
+    - `controllers.py`: Uso de `print` para logging em toda a aplicação, em vez de um sistema de logging configurado e estruturado.
+    - `app.py`: Validações de input inconsistentes e dispersas pelo código, em vez de um esquema de validação centralizado (ex: Marshmallow).
 
 ## Como Rodar:
 

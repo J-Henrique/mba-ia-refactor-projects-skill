@@ -171,7 +171,7 @@ def criar_pedido(usuario_id, itens):
 def get_pedidos_usuario(usuario_id):
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM pedidos WHERE usuario_id = " + str(usuario_id))
+    cursor.execute("SELECT * FROM pedidos WHERE usuario_id = ?", (usuario_id,))
     rows = cursor.fetchall()
     result = []
     for row in rows:
@@ -185,15 +185,17 @@ def get_pedidos_usuario(usuario_id):
         }
 
         cursor2 = db.cursor()
-        cursor2.execute("SELECT * FROM itens_pedido WHERE pedido_id = " + str(row["id"]))
+        cursor2.execute("""
+            SELECT i.*, p.nome as produto_nome
+            FROM itens_pedido i
+            JOIN produtos p ON i.produto_id = p.id
+            WHERE i.pedido_id = ?
+        """, (row["id"],))
         itens = cursor2.fetchall()
         for item in itens:
-            cursor3 = db.cursor()
-            cursor3.execute("SELECT nome FROM produtos WHERE id = " + str(item["produto_id"]))
-            prod = cursor3.fetchone()
             pedido["itens"].append({
                 "produto_id": item["produto_id"],
-                "produto_nome": prod["nome"] if prod else "Desconhecido",
+                "produto_nome": item["produto_nome"],
                 "quantidade": item["quantidade"],
                 "preco_unitario": item["preco_unitario"]
             })
