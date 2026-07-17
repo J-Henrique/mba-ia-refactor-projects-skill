@@ -4,13 +4,16 @@ from database import db
 from routes.task_routes import task_bp
 from routes.user_routes import user_bp
 from routes.report_routes import report_bp
-import os, sys, json, datetime
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'super-secret-key-123'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-dev-key')
 
 CORS(app)
 db.init_app(app)
@@ -21,7 +24,8 @@ app.register_blueprint(report_bp)
 
 @app.route('/health')
 def health():
-    return {'status': 'ok', 'timestamp': str(datetime.datetime.now())}
+    import datetime
+    return {'status': 'ok', 'timestamp': str(datetime.datetime.now(datetime.timezone.utc))}
 
 @app.route('/')
 def index():
