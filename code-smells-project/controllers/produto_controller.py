@@ -1,37 +1,50 @@
+import logging
 from flask import request, jsonify
-import models.models as models
+import models
+
+logger = logging.getLogger(__name__)
+
+# Constantes de validacao
+NOME_MIN_LEN = 2
+NOME_MAX_LEN = 200
+CATEGORIAS_VALIDAS = [
+    "informatica", "moveis", "vestuario", "geral", "eletronicos", "livros",
+]
+
 
 def listar_produtos():
     try:
         produtos = models.get_todos_produtos()
-        print("Listando " + str(len(produtos)) + " produtos")
+        logger.info("Listando %d produtos", len(produtos))
         return jsonify({"dados": produtos, "sucesso": True}), 200
     except Exception as e:
-        print("ERRO: " + str(e))
+        logger.error("Erro ao listar produtos: %s", str(e))
         return jsonify({"erro": str(e)}), 500
+
 
 def buscar_produto(id):
     try:
         produto = models.get_produto_por_id(id)
         if produto:
             return jsonify({"dados": produto, "sucesso": True}), 200
-        else:
-            return jsonify({"erro": "Produto não encontrado", "sucesso": False}), 404
+        return jsonify({"erro": "Produto nao encontrado", "sucesso": False}), 404
     except Exception as e:
+        logger.error("Erro ao buscar produto %d: %s", id, str(e))
         return jsonify({"erro": str(e)}), 500
+
 
 def criar_produto():
     try:
         dados = request.get_json()
 
         if not dados:
-            return jsonify({"erro": "Dados inválidos"}), 400
+            return jsonify({"erro": "Dados invalidos"}), 400
         if "nome" not in dados:
-            return jsonify({"erro": "Nome é obrigatório"}), 400
+            return jsonify({"erro": "Nome e obrigatorio"}), 400
         if "preco" not in dados:
-            return jsonify({"erro": "Preço é obrigatório"}), 400
+            return jsonify({"erro": "Preco e obrigatorio"}), 400
         if "estoque" not in dados:
-            return jsonify({"erro": "Estoque é obrigatório"}), 400
+            return jsonify({"erro": "Estoque e obrigatorio"}), 400
 
         nome = dados["nome"]
         descricao = dados.get("descricao", "")
@@ -40,25 +53,28 @@ def criar_produto():
         categoria = dados.get("categoria", "geral")
 
         if preco < 0:
-            return jsonify({"erro": "Preço não pode ser negativo"}), 400
+            return jsonify({"erro": "Preco nao pode ser negativo"}), 400
         if estoque < 0:
-            return jsonify({"erro": "Estoque não pode ser negativo"}), 400
-        if len(nome) < 2:
+            return jsonify({"erro": "Estoque nao pode ser negativo"}), 400
+        if len(nome) < NOME_MIN_LEN:
             return jsonify({"erro": "Nome muito curto"}), 400
-        if len(nome) > 200:
+        if len(nome) > NOME_MAX_LEN:
             return jsonify({"erro": "Nome muito longo"}), 400
-
-        categorias_validas = ["informatica", "moveis", "vestuario", "geral", "eletronicos", "livros"]
-        if categoria not in categorias_validas:
-            return jsonify({"erro": "Categoria inválida. Válidas: " + str(categorias_validas)}), 400
+        if categoria not in CATEGORIAS_VALIDAS:
+            return jsonify(
+                {"erro": "Categoria invalida. Validas: " + str(CATEGORIAS_VALIDAS)}
+            ), 400
 
         id = models.criar_produto(nome, descricao, preco, estoque, categoria)
-        print("Produto criado com ID: " + str(id))
-        return jsonify({"dados": {"id": id}, "sucesso": True, "mensagem": "Produto criado"}), 201
+        logger.info("Produto criado com ID: %d", id)
+        return jsonify(
+            {"dados": {"id": id}, "sucesso": True, "mensagem": "Produto criado"}
+        ), 201
 
     except Exception as e:
-        print("ERRO ao criar produto: " + str(e))
+        logger.error("Erro ao criar produto: %s", str(e))
         return jsonify({"erro": str(e)}), 500
+
 
 def atualizar_produto(id):
     try:
@@ -66,16 +82,16 @@ def atualizar_produto(id):
 
         produto_existente = models.get_produto_por_id(id)
         if not produto_existente:
-            return jsonify({"erro": "Produto não encontrado"}), 404
+            return jsonify({"erro": "Produto nao encontrado"}), 404
 
         if not dados:
-            return jsonify({"erro": "Dados inválidos"}), 400
+            return jsonify({"erro": "Dados invalidos"}), 400
         if "nome" not in dados:
-            return jsonify({"erro": "Nome é obrigatório"}), 400
+            return jsonify({"erro": "Nome e obrigatorio"}), 400
         if "preco" not in dados:
-            return jsonify({"erro": "Preço é obrigatório"}), 400
+            return jsonify({"erro": "Preco e obrigatorio"}), 400
         if "estoque" not in dados:
-            return jsonify({"erro": "Estoque é obrigatório"}), 400
+            return jsonify({"erro": "Estoque e obrigatorio"}), 400
 
         nome = dados["nome"]
         descricao = dados.get("descricao", "")
@@ -84,28 +100,31 @@ def atualizar_produto(id):
         categoria = dados.get("categoria", "geral")
 
         if preco < 0:
-            return jsonify({"erro": "Preço não pode ser negativo"}), 400
+            return jsonify({"erro": "Preco nao pode ser negativo"}), 400
         if estoque < 0:
-            return jsonify({"erro": "Estoque não pode ser negativo"}), 400
+            return jsonify({"erro": "Estoque nao pode ser negativo"}), 400
 
         models.atualizar_produto(id, nome, descricao, preco, estoque, categoria)
         return jsonify({"sucesso": True, "mensagem": "Produto atualizado"}), 200
 
     except Exception as e:
+        logger.error("Erro ao atualizar produto %d: %s", id, str(e))
         return jsonify({"erro": str(e)}), 500
+
 
 def deletar_produto(id):
     try:
-
         produto = models.get_produto_por_id(id)
         if not produto:
-            return jsonify({"erro": "Produto não encontrado"}), 404
+            return jsonify({"erro": "Produto nao encontrado"}), 404
 
         models.deletar_produto(id)
-        print("Produto " + str(id) + " deletado")
+        logger.info("Produto %d deletado", id)
         return jsonify({"sucesso": True, "mensagem": "Produto deletado"}), 200
     except Exception as e:
+        logger.error("Erro ao deletar produto %d: %s", id, str(e))
         return jsonify({"erro": str(e)}), 500
+
 
 def buscar_produtos():
     try:
@@ -120,6 +139,9 @@ def buscar_produtos():
             preco_max = float(preco_max)
 
         resultados = models.buscar_produtos(termo, categoria, preco_min, preco_max)
-        return jsonify({"dados": resultados, "total": len(resultados), "sucesso": True}), 200
+        return jsonify(
+            {"dados": resultados, "total": len(resultados), "sucesso": True}
+        ), 200
     except Exception as e:
+        logger.error("Erro ao buscar produtos: %s", str(e))
         return jsonify({"erro": str(e)}), 500
