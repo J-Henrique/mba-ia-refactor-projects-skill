@@ -12,6 +12,12 @@ app.post('/api/checkout', CheckoutController.checkout);
 app.get('/api/admin/financial-report', ReportController.financialReport);
 app.delete('/api/users/:id', UserController.deleteUser);
 
+// Middleware de erro centralizado
+app.use((err, _req, res, _next) => {
+  console.error('[ERROR]', err.stack || err.message || err);
+  res.status(500).json({ error: 'Erro interno do servidor' });
+});
+
 app.listen(config.port, () => {
-    console.log(`Frankenstein LMS refatorado rodando na porta ${config.port}...`);
+  console.log(`ecommerce-api-legacy rodando na porta ${config.port}...`);
 });

@@ -1,7 +1,13 @@
-const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
-function hashPassword(password) {
-    return crypto.createHash('sha256').update(password).digest('hex');
+const SALT_ROUNDS = 10;
+
+async function hashPassword(password) {
+  return bcrypt.hash(password, SALT_ROUNDS);
 }
 
-module.exports = { hashPassword };
+async function comparePassword(password, hash) {
+  return bcrypt.compare(password, hash);
+}
+
+module.exports = { hashPassword, comparePassword };
