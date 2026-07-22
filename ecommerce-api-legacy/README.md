@@ -1,21 +1,68 @@
 # ecommerce-api-legacy
 
-LMS API (Node.js/Express) com fluxo de checkout.
+API de LMS (Learning Management System) em Node.js/Express com fluxo de checkout e matrícula. Projeto refatorado para o padrão **MVC**.
 
-## Análise Manual de Problemas
+## Stack
 
-Identificamos os seguintes problemas de arquitetura e qualidade no projeto, classificados por severidade:
+- **Linguagem:** Node.js
+- **Framework:** Express
+- **Banco:** SQLite (via `sqlite3` — em memória para dev)
+- **Autenticação:** `bcryptjs`
+
+## Estrutura (MVC)
+
+```
+ecommerce-api-legacy/
+├── src/
+│   ├── app.js                    # Entry point — inicializa app, middleware de erro
+│   ├── config/
+│   │   └── config.js             # Configuração centralizada via env vars
+│   ├── controllers/              # Lógica de negócio + tratamento HTTP
+│   │   ├── CheckoutController.js
+│   │   ├── ReportController.js
+│   │   └── UserController.js
+│   ├── models/
+│   │   └── Database.js           # Inicialização SQLite + seed
+│   ├── routes/
+│   │   └── index.js              # Definição de endpoints (Router)
+│   └── utils/
+│       └── security.js           # Hash de senha (bcryptjs)
+├── package.json
+└── .env.example
+```
+
+## Funcionalidades
+
+- **Checkout:** Matrícula em curso com validação de pagamento (cartão começando com `4` = aprovado)
+- **Relatórios:** Relatório financeiro com JOIN entre cursos, matrículas, usuários e pagamentos
+- **Usuários:** Deleção de usuário com remoção em cascata de registros relacionados
+
+## Análise Manual de Problemas (pós-refatoração)
+
+Problemas identificados durante a auditoria (`reports/audit-project-2.md`):
 
 - **CRITICAL:**
-    - `AppManager.js`: SQL Injection em todas as queries (concatenação direta de strings).
-    - `AppManager.js`: Credenciais de gateway de pagamento hardcoded (`config.paymentGatewayKey`).
-    - `AppManager.js`: "God Class" (`AppManager`) centraliza DB, rotas, lógica de negócio e geração de relatórios.
+    - `controllers/CheckoutController.js`: Múltiplos `new Promise()` aninhados (callback hell) — pendente
+    - `models/Database.js`: Senha em texto puro no seed (`'123'`) — pendente
 - **HIGH:**
-    - `AppManager.js`: Criptografia insegura (`badCrypto` function).
-    - `AppManager.js`: Falta de validação robusta de entradas.
+    - `controllers/UserController.js`: Transação manual com `db.serialize()` não é thread-safe
+    - `src/app.js`: Antes as rotas eram inline (corrigido — extraído para `routes/index.js`)
 - **MEDIUM:**
-    - `AppManager.js`: Gerenciamento inconsistente de erros e vazamento de status do banco.
-    - `utils.js`: Lógica de utilitários acoplada e pouco testável.
+    - `controllers/`: Retorno de erro como texto puro em alguns lugares (corrigido — agora JSON)
+    - `controllers/`: `console.error` para logging (sem logger estruturado)
 - **LOW:**
-    - `AppManager.js`: Uso de `console.log` para logs de transações sensíveis.
-    - `AppManager.js`: Comentários pobres e código sem indentação consistente.
+    - `models/Database.js`: Banco em `:memory:` — dados voláteis
+
+## Como Rodar
+
+```bash
+npm install
+cp .env.example .env  # configure as variáveis
+npm start
+```
+
+A aplicação sobe em `http://localhost:3000`.
+
+## Auditoria
+
+Relatório completo em [`reports/audit-project-2.md`](../reports/audit-project-2.md).
