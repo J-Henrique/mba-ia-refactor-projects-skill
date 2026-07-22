@@ -1,6 +1,6 @@
 import smtplib
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from config.settings import Config
 
 
@@ -35,7 +35,7 @@ class NotificationService:
             'type': 'task_assigned',
             'user_id': user.id,
             'task_id': task.id,
-            'timestamp': datetime.utcnow()
+            'timestamp': datetime.now(timezone.utc).replace(tzinfo=None)
         })
 
     def notify_task_overdue(self, user, task):

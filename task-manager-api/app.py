@@ -53,7 +53,7 @@ app.register_blueprint(category_bp)
 def health():
     return {
         "status": "ok",
-        "timestamp": str(datetime.datetime.now(datetime.timezone.utc)),
+        "timestamp": str(datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)),
     }
 
 

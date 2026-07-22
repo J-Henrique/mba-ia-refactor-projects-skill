@@ -26,10 +26,10 @@ class UserController {
         });
       });
 
-      res.send("Usuário e registros relacionados deletados com sucesso.");
+      res.json({ message: "Usuário e registros relacionados deletados com sucesso." });
     } catch (err) {
       console.error(err);
-      res.status(500).send("Erro ao deletar usuário");
+      res.status(500).json({ error: "Erro ao deletar usuário" });
     }
   }
 }

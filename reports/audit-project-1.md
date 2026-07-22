@@ -65,3 +65,5 @@ Recommendation: Implementar biblioteca `logging` padrão do Python.
 ---
 Total: 9 findings
 ---
+
+Phase 2 complete. Proceed with refactoring (Phase 3)? [y/n]

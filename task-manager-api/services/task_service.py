@@ -107,7 +107,7 @@ class TaskService:
                 else None
             )
 
-        task.updated_at = datetime.utcnow()
+        task.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         db.session.commit()
         return task
 

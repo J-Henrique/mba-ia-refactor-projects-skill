@@ -4,7 +4,7 @@ from database import db
 from models.task import Task
 from models.user import User
 from models.category import Category
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import func
 
 
@@ -17,7 +17,7 @@ class ReportService:
     @staticmethod
     def summary_report():
         """Build the full summary report dict."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         seven_days_ago = now - timedelta(days=7)
 
         # --- counts --------------------------------------------------------

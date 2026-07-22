@@ -1,6 +1,6 @@
 """Shared utility functions used across the project."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 
 
@@ -36,7 +36,7 @@ def generate_id():
 
 def log_action(action, details=None):
     """Print a timestamped log line (transitional — replace with ``logging``)."""
-    timestamp = datetime.utcnow()
+    timestamp = datetime.now(timezone.utc).replace(tzinfo=None)
     print(f"[{timestamp}] ACTION: {action}")
     if details:
         print(f"  DETAILS: {details}")
