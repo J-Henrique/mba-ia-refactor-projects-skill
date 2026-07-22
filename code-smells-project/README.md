@@ -42,19 +42,19 @@ code-smells-project/
 
 ## Análise Manual de Problemas (pós-refatoração)
 
-Problemas identificados durante a auditoria (`reports/audit-project-1.md`):
+Problemas identificados durante a auditoria (`reports/audit-project-1.md`), classificados por severidade com justificativa:
 
 - **CRITICAL:**
-    - `config/settings.py`: `SECRET_KEY` com fallback hardcoded em dev (corrigido com env var + `.env`)
-    - `models/produto_model.py`: SQL Injection histórico (corrigido com placeholders `?` do SQLite)
+    - `config/settings.py`: `SECRET_KEY` com fallback hardcoded em dev. *Relevância:* se o código for commitado com a chave de fallback, qualquer um com acesso ao repositório pode forjar sessões. (Corrigido — movido para env var + `.env`)
+    - `models/produto_model.py`: SQL Injection histórico por concatenação de strings em queries. *Relevância:* permitia que um usuário malicioso destruísse ou extraísse todo o banco via parâmetros da URL. (Corrigido — placeholders `?` do SQLite)
 - **HIGH:**
-    - `controllers/`: Lógica de validação ainda nos controllers, poderia ser extraída para services
-    - `app.py`: `DEBUG = True` em dev (agora controlado via env var)
+    - `controllers/`: Lógica de validação ainda nos controllers, poderia ser extraída para services. *Relevância:* dificulta testes unitários e reúso das regras de negócio.
+    - `app.py`: `DEBUG = True` ativado. *Relevância:* em produção, expõe stack traces completos ao usuário final, vazando detalhes da infraestrutura. (Corrigido — controlado via env var)
 - **MEDIUM:**
-    - `models/pedido_model.py`: N+1 queries em listagem de pedidos (pendente)
-    - `models/usuario_model.py`: Senha histórica em texto puro no seed (corrigido com bcrypt)
+    - `models/pedido_model.py`: N+1 queries em listagem de pedidos. *Relevância:* a cada pedido listado, uma query extra é feita para carregar itens — com 100 pedidos, são 101 queries em vez de 2. (Pendente)
+    - `models/usuario_model.py`: Senha armazenada em texto puro no seed. *Relevância:* qualquer acesso ao arquivo `database.py` expõe credenciais reais. (Corrigido — bcrypt)
 - **LOW:**
-    - `controllers/`: `logging` implementado, mas `print` residual em alguns lugares
+    - `controllers/`: `print` residual em alguns lugares. *Relevância:* sem níveis de log, não é possível filtrar mensagens por importância em produção.
 
 ## Como Rodar
 

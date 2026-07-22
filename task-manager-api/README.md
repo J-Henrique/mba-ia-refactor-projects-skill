@@ -53,22 +53,22 @@ task-manager-api/
 
 ## Análise Manual de Problemas (pós-refatoração)
 
-Problemas identificados durante a auditoria (`reports/audit-project-3.md`):
+Problemas identificados durante a auditoria (`reports/audit-project-3.md`), classificados por severidade com justificativa:
 
 - **CRITICAL:**
-    - `services/notification_service.py`: Credenciais SMTP hardcoded (corrigido — movido para env vars)
-    - `models/user.py`: MD5 para hash de senha (corrigido — `werkzeug.security`)
+    - `services/notification_service.py`: Credenciais SMTP hardcoded (`email_user` + `email_password`). *Relevância:* se o repositório for público, qualquer um pode usar o servidor SMTP para enviar emails fraudulentos. (Corrigido — movido para env vars)
+    - `models/user.py`: MD5 para hash de senha. *Relevância:* MD5 é quebrado — um atacante com acesso ao banco recupera todas as senhas em segundos. (Corrigido — `werkzeug.security` com bcrypt)
 - **HIGH:**
-    - `routes/user_routes.py`: Fat Route com lógica de negócio inline (corrigido — extraído para `UserService`)
-    - `routes/report_routes.py`: Fat Route com relatórios + categorias misturados (corrigido — `CategoryService` + blueprint dedicado)
-    - `routes/user_routes.py`: Tight coupling com `db` (corrigido — routes usam apenas controllers/services)
+    - `routes/user_routes.py`: Fat Route com lógica de negócio inline. *Relevância:* 211 linhas com validação, queries e resposta misturadas — impossível testar a lógica sem fazer requisição HTTP. (Corrigido — extraído para `UserService` + `UserController`)
+    - `routes/report_routes.py`: Fat Route com relatórios + categorias misturados. *Relevância:* 223 linhas misturando 2 domínios diferentes no mesmo arquivo. (Corrigido — `CategoryService` + blueprint dedicado)
+    - `routes/user_routes.py`: Tight coupling com `db`. *Relevância:* imports diretos de `database.py` nas rotas impedem trocar de banco ou mockar em testes. (Corrigido — rotas usam apenas controllers/services)
 - **MEDIUM:**
-    - `services/task_service.py`: N+1 queries em `get_all_tasks` (corrigido — `joinedload`)
-    - `services/report_service.py`: N+1 queries em loops (corrigido — `func.count()` + `GROUP BY`)
-    - `models/task.py`: Lógica de `overdue` duplicada em 5 lugares (corrigido — consolidado em `is_overdue()`)
+    - `services/task_service.py`: N+1 queries em `get_all_tasks`. *Relevância:* para cada task, 2 queries extras (User + Category) — com 100 tasks, são 201 queries. (Corrigido — `joinedload`)
+    - `services/report_service.py`: N+1 queries em loops. *Relevância:* relatório de usuários iterava cada um para contar tasks — com 50 usuários, 51 queries. (Corrigido — `func.count()` + `GROUP BY`)
+    - `models/task.py`: Lógica de `overdue` duplicada em 5 lugares. *Relevância:* se a regra de negócio mudar (ex: adicionar tolerância de 1 dia), 5 arquivos precisam ser alterados em sincronia. (Corrigido — consolidado em `is_overdue()`)
 - **LOW:**
-    - `routes/`: `print()` para logging (corrigido — `logging` module)
-    - `utils/helpers.py`: Imports não utilizados (corrigido — removidos)
+    - `routes/`: `print()` para logging. *Relevância:* sem níveis de log (INFO, WARNING, ERROR), não é possível silenciar mensagens de debug em produção. (Corrigido — `logging` module)
+    - `utils/helpers.py`: Imports não utilizados (`os`, `json`, `sys`, `math`, `hashlib`). *Relevância:* poluição do namespace e falsa impressão de dependências. (Corrigido — removidos)
 
 ## Como Rodar
 

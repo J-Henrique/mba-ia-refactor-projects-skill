@@ -39,19 +39,19 @@ ecommerce-api-legacy/
 
 ## Análise Manual de Problemas (pós-refatoração)
 
-Problemas identificados durante a auditoria (`reports/audit-project-2.md`):
+Problemas identificados durante a auditoria (`reports/audit-project-2.md`), classificados por severidade com justificativa:
 
 - **CRITICAL:**
-    - `controllers/CheckoutController.js`: Múltiplos `new Promise()` aninhados (callback hell) — pendente
-    - `models/Database.js`: Senha em texto puro no seed (`'123'`) — pendente
+    - `controllers/CheckoutController.js`: Múltiplos `new Promise()` aninhados (callback hell). *Relevância:* 7 níveis de aninhamento tornam o fluxo de checkout impossível de ler e propenso a race conditions. (Pendente)
+    - `models/Database.js`: Senha em texto puro no seed (`'123'`). *Relevância:* qualquer pessoa com acesso ao código consegue extrair credenciais reais do banco em memória. (Pendente)
 - **HIGH:**
-    - `controllers/UserController.js`: Transação manual com `db.serialize()` não é thread-safe
-    - `src/app.js`: Antes as rotas eram inline (corrigido — extraído para `routes/index.js`)
+    - `controllers/UserController.js`: Transação manual com `db.serialize()` não é thread-safe. *Relevância:* em cenários de alta concorrência, operações podem intercalar e corromper o banco.
+    - `src/app.js`: Antes as rotas eram inline no `app.js`. *Relevância:* violava separação de responsabilidades — para adicionar um endpoint, era necessário modificar o entry point da aplicação. (Corrigido — extraído para `routes/index.js`)
 - **MEDIUM:**
-    - `controllers/`: Retorno de erro como texto puro em alguns lugares (corrigido — agora JSON)
-    - `controllers/`: `console.error` para logging (sem logger estruturado)
+    - `controllers/`: Retorno de erro como texto puro em alguns lugares. *Relevância:* clientes que esperam JSON quebram ao receber `res.send("Erro")` — sem `Content-Type: application/json`. (Corrigido — agora JSON)
+    - `controllers/`: `console.error` para logging. *Relevância:* sem timestamps, níveis ou formato estruturado, é impossível fazer debugging em produção.
 - **LOW:**
-    - `models/Database.js`: Banco em `:memory:` — dados voláteis
+    - `models/Database.js`: Banco em `:memory:`. *Relevância:* todos os dados são perdidos ao reiniciar o servidor, inviável para qualquer ambiente que não seja desenvolvimento.
 
 ## Como Rodar
 
