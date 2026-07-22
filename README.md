@@ -446,3 +446,346 @@ A skill deve atingir os seguintes mínimos em **todos os 3 projetos**:
 - **Projetos diferentes exigem adaptação** — a Fase 3 de um projeto já parcialmente organizado não vai ter as mesmas transformações de um monolito. Sua skill deve se adaptar ao contexto.
 - **Pedir confirmação na Fase 2 é obrigatório** — o humano deve revisar o relatório antes de qualquer modificação.
 - **Consulte as referências do curso** — revise a documentação oficial da ferramenta escolhida e os materiais das aulas para relembrar a estrutura e anatomia de uma skill.
+
+---
+
+## A) Análise Manual
+
+### code-smells-project (Python/Flask — API de E-commerce)
+
+Problemas identificados manualmente no código legado, antes da refatoração:
+
+- **CRITICAL:**
+  - `app.py`: `SECRET_KEY` hardcoded (`'minha-chave-super-secreta-123'`). *Relevância:* qualquer pessoa com acesso ao repositório pode forjar sessões e comprometer a aplicação.
+  - `models.py`: SQL Injection em todos os métodos CRUD por concatenação direta de strings. *Relevância:* um atacante pode destruir ou extrair todo o banco de dados via parâmetros da URL.
+  - `app.py`: Endpoint `/admin/query` permite execução de queries SQL arbitrárias. *Relevância:* acesso total irrestrito ao banco de dados.
+- **HIGH:**
+  - `controllers.py`: God Class — lógica de 4 domínios (produtos, usuários, pedidos, relatórios) em um único arquivo de 250 linhas. *Relevância:* qualquer mudança afeta todos os domínios, impossível testar isoladamente.
+  - `app.py`: `debug=True` ativado. *Relevância:* expõe stack traces detalhados ao usuário final em produção.
+- **MEDIUM:**
+  - `models.py`: N+1 queries em `get_pedidos_usuario`. *Relevância:* com 100 pedidos, o banco recebe 101 queries em vez de 1.
+  - `models.py`: Senha armazenada sem hash seguro. *Relevância:* vazamento do banco expõe todas as credenciais em texto puro.
+  - `controllers.py`: Tratamento de erros inconsistente — `except` genérico retorna `str(e)` para o cliente. *Relevância:* vaza detalhes da estrutura interna da aplicação.
+- **LOW:**
+  - `controllers.py`: Uso de `print()` para logging. *Relevância:* sem níveis de log, não é possível filtrar mensagens em produção.
+  - `app.py`: Validações de input dispersas pelo código. *Relevância:* aumenta o risco de falhas de validação em novos endpoints.
+
+### ecommerce-api-legacy (Node.js/Express — LMS API)
+
+- **CRITICAL:**
+  - `AppManager.js`: SQL Injection em todas as queries (concatenação direta). *Relevância:* permite injeção de comandos maliciosos no banco SQLite.
+  - `AppManager.js`: Credenciais de gateway de pagamento hardcoded. *Relevância:* expõe chave de pagamento real no repositório.
+  - `AppManager.js`: God Class — um único arquivo gerencia DB, rotas, lógica de negócio e relatórios. *Relevância:* impossível manter ou testar separadamente.
+- **HIGH:**
+  - `AppManager.js`: Criptografia insegura (`badCrypto`). *Relevância:* senhas podem ser revertidas com esforço mínimo.
+  - `AppManager.js`: Falta de validação robusta de entradas. *Relevância:* dados malformados podem quebrar o fluxo de checkout.
+- **MEDIUM:**
+  - `AppManager.js`: Gerenciamento inconsistente de erros. *Relevância:* vazamento de status interno do banco para o cliente.
+  - `utils.js`: Lógica acoplada e pouco testável. *Relevância:* impossível mockar dependências em testes.
+- **LOW:**
+  - `AppManager.js`: `console.log` para transações sensíveis. *Relevância:* logs de pagamento sem estrutura nem níveis.
+  - `AppManager.js`: Código sem indentação consistente. *Relevância:* dificulta a leitura e manutenção.
+
+### task-manager-api (Python/Flask — API de Task Manager)
+
+- **CRITICAL:**
+  - `app.py`: `SECRET_KEY` hardcoded como fallback (`'default-dev-key'`). *Relevância:* se a env var não for configurada, a chave é trivialmente adivinhável.
+  - `app.py`: `debug=True` ativado. *Relevância:* stack traces expostos em produção.
+- **HIGH:**
+  - `routes/task_routes.py`: Fat Routes — lógica de negócio, validação e transformação de dados misturadas nas rotas. *Relevância:* impossível testar a lógica sem fazer requisição HTTP.
+- **MEDIUM:**
+  - `routes/task_routes.py`: N+1 queries — carregamento de `user_name` e `category_name` em loop dentro de `get_tasks`. *Relevância:* com 100 tasks, 201 queries em vez de 3.
+  - `routes/task_routes.py`: Falta de logging estruturado (uso excessivo de `print`). *Relevância:* sem níveis de log para debugging.
+  - `routes/task_routes.py`: Tratamento de erros genérico. *Relevância:* erros específicos são mascarados, dificultando diagnóstico.
+- **LOW:**
+  - `routes/task_routes.py`: Validações repetitivas espalhadas. *Relevância:* se a regra de validação mudar, vários lugares precisam ser alterados.
+
+---
+
+## B) Construção da Skill
+
+### Decisões de Design
+
+A skill `refactor-arch` foi estruturada em 3 fases sequenciais (Análise → Auditoria → Refatoração), cada uma com seu próprio arquivo de referência:
+
+| Fase | Arquivo de Referência | Propósito |
+|------|----------------------|-----------|
+| 1 — Análise | `references/analysis_heuristics.md` | Heurísticas para detectar linguagem, framework, banco e arquitetura |
+| 2 — Auditoria | `references/anti_patterns.md` + `references/audit_template.md` | Catálogo de 10 anti-patterns com severidade + template do relatório |
+| 3 — Refatoração | `references/mvc_guidelines.md` + `references/refactoring_playbook.md` | Diretrizes MVC + 8 padrões de transformação com código antes/depois |
+
+Optou-se por **separar o conhecimento por fase** em vez de um único arquivo monolítico, pois:
+1. Cada fase tem um propósito distinto e requer informações diferentes
+2. Facilita a manutenção — ajustar uma fase não impacta as outras
+3. A skill pode referenciar o arquivo específico da fase em execução, sem poluir o contexto
+
+### Anti-patterns no Catálogo
+
+O catálogo contém **10 anti-patterns** com severidade distribuída:
+
+| Anti-pattern | Severidade | Por que foi incluído |
+|---|---|---|
+| God Class | CRITICAL | Presente nos 3 projetos — o problema mais comum em código legado |
+| Hardcoded Credentials | CRITICAL | Risco de segurança mais grave |
+| SQL Injection | CRITICAL | Presente em 2 dos 3 projetos |
+| Fat Controller | HIGH | Violação direta do MVC |
+| Tight Coupling | HIGH | Impede testes e reúso |
+| N+1 Queries | MEDIUM | Problema de performance comum |
+| Duplicate Code | MEDIUM | Aumenta custo de manutenção |
+| Deprecated API | MEDIUM | Presente no task-manager-api (MD5) |
+| Magic Numbers | LOW | Reduz legibilidade |
+| Inconsistent Naming | LOW | Dificulta compreensão do código |
+
+### Agnosticidade de Tecnologia
+
+Para garantir que a skill funciona em Python e Node.js, as seguintes decisões foram tomadas:
+
+- **Heurísticas de detecção:** a Fase 1 usa arquivos de manifesto (`requirements.txt`, `package.json`) para identificar a stack, sem assumir nenhuma linguagem específica
+- **Anti-patterns descritos por comportamento:** "lógica de negócio na rota" é detectável em Flask e Express, independente da sintaxe
+- **Playbook com exemplos genéricos:** os padrões de transformação mostram o conceito (ex: "extrair config para env vars") em vez de código específico de framework
+- **Estrutura alvo flexível:** o MVC é aplicado com a nomenclatura apropriada para cada linguagem (`controllers/` em Python, `Controllers.js` em Node)
+
+### Desafios Encontrados
+
+1. **Rotas vs Views:** O padrão MVC tradicional tem "Views" para renderização, mas APIs REST não renderizam HTML. Optou-se por tratar `routes/` como a camada de View (definição de endpoints), mantendo a semântica MVC sem forçar uma abstração inadequada.
+
+2. **Projetos em diferentes estágios:** O `code-smells-project` era um monolito completo, enquanto o `task-manager-api` já tinha models e services. A skill precisou se adaptar: no primeiro, criou a estrutura do zero; no segundo, extraiu controllers e config onde faltavam.
+
+3. **N+1 queries em Python vs Node:** No `code-smells-project` (SQLite puro), a correção foi usar `JOIN` na query SQL. No `task-manager-api` (SQLAlchemy), a correção foi usar `joinedload()`. A skill precisou detectar o padrão ORM vs raw SQL para aplicar a transformação correta.
+
+4. **Callback Hell no Express:** O `ecommerce-api-legacy` usava `sqlite3` com callbacks — um padrão que não existe no Flask. A skill identificou como "alta complexidade assíncrona" e recomendou `async/await` + promisificação.
+
+---
+
+## C) Resultados
+
+### Resumo dos Relatórios de Auditoria
+
+| Projeto | CRITICAL | HIGH | MEDIUM | LOW | Total |
+|---------|:--------:|:----:|:------:|:---:|:-----:|
+| code-smells-project | 3 | 2 | 3 | 1 | **9** |
+| ecommerce-api-legacy | 2 | 2 | 2 | 1 | **7** |
+| task-manager-api | 2 | 3 | 5 | 3 | **13** |
+| **Total** | **7** | **7** | **10** | **5** | **29** |
+
+### Comparação Antes/Depois
+
+**code-smells-project:**
+```
+Antes:                              Depois:
+├── app.py              (500 linhas) ├── app.py
+├── controllers.py      (250 linhas) ├── config/settings.py
+├── models.py           (350 linhas) ├── controllers/
+├── database.py                      │   ├── produto_controller.py
+└── requirements.txt                 │   ├── usuario_controller.py
+                                     │   ├── pedido_controller.py
+                                     │   └── relatorio_controller.py
+                                     ├── models/
+                                     │   ├── produto_model.py
+                                     │   ├── usuario_model.py
+                                     │   ├── pedido_model.py
+                                     │   └── relatorio_model.py
+                                     ├── routes/routes.py
+                                     ├── database.py
+                                     └── requirements.txt
+```
+
+**ecommerce-api-legacy:**
+```
+Antes:                              Depois:
+├── src/                             ├── src/
+│   ├── app.js                       │   ├── app.js
+│   ├── AppManager.js   (500 linhas) │   ├── config/config.js
+│   └── utils.js                     │   ├── controllers/
+│   └── package.json                 │   │   ├── CheckoutController.js
+                                     │   │   ├── ReportController.js
+                                     │   │   └── UserController.js
+                                     │   ├── models/Database.js
+                                     │   ├── routes/index.js
+                                     │   └── utils/security.js
+                                     └── package.json
+```
+
+**task-manager-api:**
+```
+Antes:                              Depois:
+├── app.py                           ├── app.py
+├── database.py                      ├── config/settings.py
+├── models/                          ├── controllers/
+│   ├── task.py, user.py, ...        │   ├── task_controller.py
+├── routes/                          │   ├── user_controller.py
+│   ├── task_routes.py               │   ├── report_controller.py
+│   ├── user_routes.py               │   └── category_controller.py
+│   └── report_routes.py             ├── models/
+├── services/                        │   ├── task.py, user.py, ...
+│   ├── task_service.py              ├── routes/
+│   └── notification_service.py      │   ├── task_routes.py
+├── utils/helpers.py                 │   ├── user_routes.py
+                                     │   ├── report_routes.py
+                                     │   └── category_routes.py
+                                     ├── services/
+                                     │   ├── task_service.py
+                                     │   ├── user_service.py
+                                     │   ├── report_service.py
+                                     │   ├── category_service.py
+                                     │   └── notification_service.py
+                                     ├── utils/
+                                     │   ├── helpers.py
+                                     │   └── error_handler.py
+                                     ├── database.py
+                                     └── seed.py
+```
+
+### Checklist de Validação
+
+| Item | code-smells | ecommerce-api | task-manager |
+|------|:-----------:|:-------------:|:------------:|
+| **Fase 1 — Linguagem correta** | ✅ | ✅ | ✅ |
+| **Fase 1 — Framework correto** | ✅ | ✅ | ✅ |
+| **Fase 1 — Domínio descrito** | ✅ | ✅ | ✅ |
+| **Fase 1 — Nº arquivos condiz** | ✅ | ✅ | ✅ |
+| **Fase 2 — Relatório segue template** | ✅ | ✅ | ✅ |
+| **Fase 2 — Finding c/ arquivo:linha** | ✅ | ✅ | ✅ |
+| **Fase 2 — Ordenado CRITICAL→LOW** | ✅ | ✅ | ✅ |
+| **Fase 2 — Mínimo 5 findings** | ✅ 9 | ✅ 7 | ✅ 13 |
+| **Fase 2 — APIs deprecated** | ✅ | ✅ | ✅ |
+| **Fase 2 — Pausa p/ confirmação** | ✅ | ✅ | ✅ |
+| **Fase 3 — Estrutura MVC** | ✅ | ✅ | ✅ |
+| **Fase 3 — Config extraída** | ✅ | ✅ | ✅ |
+| **Fase 3 — Models criados** | ✅ | ✅ | ✅ |
+| **Fase 3 — Routes separadas** | ✅ | ✅ | ✅ |
+| **Fase 3 — Controllers** | ✅ | ✅ | ✅ |
+| **Fase 3 — Error handling** | ✅ | ✅ | ✅ |
+| **Fase 3 — Entry point claro** | ✅ | ✅ | ✅ |
+| **Fase 3 — App inicia sem erros** | ✅ | ✅ | ✅ |
+| **Fase 3 — Endpoints funcionam** | ✅ 19/19 | ✅ 4/4 | ✅ 24/24 |
+
+### Logs de Validação
+
+**code-smells-project — 19 endpoints testados via Flask test client:**
+```
+✅ GET /produtos                     200   9 produtos
+✅ GET /produtos/1                   200   Notebook Gamer Ultra
+✅ GET /produtos/999                 404   Produto nao encontrado
+✅ GET /produtos/busca?q=Notebook    200   1 resultados
+✅ POST /produtos                    201   id=11
+✅ PUT /produtos/2                   200   Produto atualizado
+✅ DELETE /produtos/2                200   Produto deletado
+✅ GET /usuarios                     200   3 usuarios
+✅ GET /usuarios/2                   200   Joao Silva
+✅ POST /usuarios                    201   id=4
+✅ POST /login (ok)                  200   Login OK
+✅ POST /login (errado)              401   Email ou senha invalidos
+✅ POST /pedidos                     201   Pedido criado com sucesso
+✅ GET /pedidos/usuario/2            200   1 pedidos
+✅ GET /pedidos                      200   2 pedidos
+✅ PUT /pedidos/1/status             200   Status atualizado
+✅ GET /relatorios/vendas            200   True
+✅ GET /health                       200   ok
+✅ GET /                             200   Bem-vindo a API da Loja
+```
+
+**ecommerce-api-legacy — 4 endpoints testados via HTTP real (porta 3000):**
+```
+✅ POST /api/checkout              200  Sucesso
+✅ POST /api/checkout (denied)     400  Pagamento recusado
+✅ GET /api/admin/financial-report  200  2 courses
+✅ DELETE /api/users/1              200  JSON ✅
+```
+
+**task-manager-api — 24 endpoints testados via Flask test client:**
+```
+✅ GET /health                      200  ok
+✅ GET /                            200  ok
+✅ GET /users                       200  3 users
+✅ GET /users/1                     200  password não exposta
+✅ GET /users/999                   404  Usuário não encontrado
+✅ POST /users                      201  id=4, password_ok=True
+✅ POST /login (ok)                 200  Login realizado com sucesso
+✅ POST /login (wrong)              401  Credenciais inválidas
+✅ GET /categories                  200  4 categories
+✅ POST /categories                 201  id=5
+✅ PUT /categories/{id}             200  Editada
+✅ DELETE /categories/{id}          200  Categoria deletada
+✅ GET /tasks                       200  10 tasks
+✅ GET /tasks/1                     200  Implementar autenticação JWT
+✅ GET /tasks/999                   404  Task não encontrada
+✅ POST /tasks                      201  id=11
+✅ PUT /tasks/{id}                  200  Task Editada
+✅ DELETE /tasks/{id}               200  Task deletada com sucesso
+✅ GET /tasks/search?q=autentica    200  1 results
+✅ GET /tasks/stats                 200  total=10
+✅ GET /reports/summary             200  tasks=10
+✅ GET /reports/user/1              200  tasks=4
+✅ GET /users/1/tasks               200  4 tasks
+✅ DELETE /users/{id}               200  Usuário deletado com sucesso
+```
+
+### Observações sobre Diferentes Stacks
+
+A skill comportou-se de forma consistente nos 3 projetos, mas algumas adaptações foram necessárias:
+
+- **Python/Flask (2 projetos):** A skill identificou corretamente a estrutura de blueprints e a injeção de dependência via `app.config`. A refatoração foi mais direta pois ambos os projetos usavam o mesmo padrão de rotas.
+- **Node.js/Express (1 projeto):** A skill detectou o padrão de middleware e callbacks. O maior desafio foi o `sqlite3` com callbacks aninhados — um padrão que não existe no ecossistema Python. A skill recomendou `async/await` + promisificação.
+- **Projeto parcialmente organizado (task-manager-api):** A skill não recriou a estrutura do zero, mas sim complementou o que já existia — adicionou `controllers/` e `config/` onde faltavam, e extraiu services onde a lógica estava nas rotas.
+
+---
+
+## D) Como Executar
+
+### Pré-requisitos
+
+- Claude Code (ou Gemini CLI / OpenAI Codex) instalado e configurado
+- Python 3.10+ com `pip` (para os projetos Flask)
+- Node.js 18+ com `npm` (para o projeto Express)
+
+### Executar a Skill em Cada Projeto
+
+```bash
+# Projeto 1 — code-smells-project (Python/Flask)
+cd code-smells-project
+claude "/refactor-arch"
+
+# Projeto 2 — ecommerce-api-legacy (Node.js/Express)
+cd ../ecommerce-api-legacy
+claude "/refactor-arch"
+
+# Projeto 3 — task-manager-api (Python/Flask)
+cd ../task-manager-api
+claude "/refactor-arch"
+```
+
+### Validar que a Refatoração Funcionou
+
+```bash
+# code-smells-project
+cd code-smells-project
+source .venv/bin/activate
+python -c "
+from app import app
+client = app.test_client()
+# Testar endpoints principais
+for path in ['/', '/health', '/produtos', '/usuarios']:
+    r = client.get(path)
+    print(f'{r.status_code} {path}')
+"
+
+# ecommerce-api-legacy
+cd ../ecommerce-api-legacy
+node -e "
+const app = require('./src/app');
+// Servidor já inicia na porta configurada
+console.log('App iniciou sem erros');
+"
+
+# task-manager-api
+cd ../task-manager-api
+source .venv/bin/activate
+python -c "
+from app import app
+client = app.test_client()
+for path in ['/', '/health', '/tasks', '/users', '/categories']:
+    r = client.get(path)
+    print(f'{r.status_code} {path}')
+"
+```

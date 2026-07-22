@@ -40,22 +40,6 @@ code-smells-project/
 - **Relatórios:** Relatório de vendas agregado
 - **Health Check:** Endpoint `/health` com status do banco
 
-## Análise Manual de Problemas (pós-refatoração)
-
-Problemas identificados durante a auditoria (`reports/audit-project-1.md`), classificados por severidade com justificativa:
-
-- **CRITICAL:**
-    - `config/settings.py`: `SECRET_KEY` com fallback hardcoded em dev. *Relevância:* se o código for commitado com a chave de fallback, qualquer um com acesso ao repositório pode forjar sessões. (Corrigido — movido para env var + `.env`)
-    - `models/produto_model.py`: SQL Injection histórico por concatenação de strings em queries. *Relevância:* permitia que um usuário malicioso destruísse ou extraísse todo o banco via parâmetros da URL. (Corrigido — placeholders `?` do SQLite)
-- **HIGH:**
-    - `controllers/`: Lógica de validação ainda nos controllers, poderia ser extraída para services. *Relevância:* dificulta testes unitários e reúso das regras de negócio.
-    - `app.py`: `DEBUG = True` ativado. *Relevância:* em produção, expõe stack traces completos ao usuário final, vazando detalhes da infraestrutura. (Corrigido — controlado via env var)
-- **MEDIUM:**
-    - `models/pedido_model.py`: N+1 queries em listagem de pedidos. *Relevância:* a cada pedido listado, uma query extra é feita para carregar itens — com 100 pedidos, são 101 queries em vez de 2. (Pendente)
-    - `models/usuario_model.py`: Senha armazenada em texto puro no seed. *Relevância:* qualquer acesso ao arquivo `database.py` expõe credenciais reais. (Corrigido — bcrypt)
-- **LOW:**
-    - `controllers/`: `print` residual em alguns lugares. *Relevância:* sem níveis de log, não é possível filtrar mensagens por importância em produção.
-
 ## Como Rodar
 
 ```bash
