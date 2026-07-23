@@ -662,7 +662,8 @@ Antes:                              Depois:
 
 ### Logs de Validação
 
-**code-smells-project — 19 endpoints testados via Flask test client:**
+**code-smells-project**
+* 19 endpoints testados via Flask test client:
 ```
 ✅ GET /produtos                     200   9 produtos
 ✅ GET /produtos/1                   200   Notebook Gamer Ultra
@@ -684,16 +685,24 @@ Antes:                              Depois:
 ✅ GET /health                       200   ok
 ✅ GET /                             200   Bem-vindo a API da Loja
 ```
+* Screenshot de log de execução de 4 endpoints:
 
-**ecommerce-api-legacy — 4 endpoints testados via HTTP real (porta 3000):**
+![screenshot-1](screenshots/screenshot-1.png)
+
+**ecommerce-api-legacy**
+* 4 endpoints testados via HTTP real (porta 3000):
 ```
 ✅ POST /api/checkout              200  Sucesso
 ✅ POST /api/checkout (denied)     400  Pagamento recusado
 ✅ GET /api/admin/financial-report  200  2 courses
 ✅ DELETE /api/users/1              200  JSON ✅
 ```
+* Screenshot de log de execução de 3 endpoints:
 
-**task-manager-api — 24 endpoints testados via Flask test client:**
+![screenshot-2](screenshots/screenshot-2.png)
+
+**task-manager-api** 
+* 24 endpoints testados via Flask test client
 ```
 ✅ GET /health                      200  ok
 ✅ GET /                            200  ok
@@ -720,6 +729,9 @@ Antes:                              Depois:
 ✅ GET /users/1/tasks               200  4 tasks
 ✅ DELETE /users/{id}               200  Usuário deletado com sucesso
 ```
+* Screenshot de log de execução de 5 endpoints:
+
+![screenshot-3](screenshots/screenshot-3.png)
 
 ### Observações sobre Diferentes Stacks
 
@@ -761,31 +773,35 @@ claude "/refactor-arch"
 # code-smells-project
 cd code-smells-project
 source .venv/bin/activate
-python -c "
-from app import app
-client = app.test_client()
-# Testar endpoints principais
-for path in ['/', '/health', '/produtos', '/usuarios']:
-    r = client.get(path)
-    print(f'{r.status_code} {path}')
-"
+python3 app.py &
+APP_PID=$!
+sleep 2
+curl -s http://localhost:5000/
+curl -s http://localhost:5000/health
+curl -s http://localhost:5000/produtos | python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d[\"dados\"])} produtos')"
+curl -s http://localhost:5000/usuarios | python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d[\"dados\"])} usuarios')"
+kill $APP_PID 2>/dev/null
 
 # ecommerce-api-legacy
 cd ../ecommerce-api-legacy
-node -e "
-const app = require('./src/app');
-// Servidor já inicia na porta configurada
-console.log('App iniciou sem erros');
-"
+npm start &
+APP_PID=$!
+sleep 2
+curl -s http://localhost:3000/api/checkout -X POST -H "Content-Type: application/json" -d '{"usr":"Teste","eml":"t@t.com","pwd":"123","c_id":1,"card":"4111111111111111"}'
+curl -s http://localhost:3000/api/admin/financial-report
+curl -s -X DELETE http://localhost:3000/api/users/1
+kill $APP_PID 2>/dev/null
 
 # task-manager-api
 cd ../task-manager-api
 source .venv/bin/activate
-python -c "
-from app import app
-client = app.test_client()
-for path in ['/', '/health', '/tasks', '/users', '/categories']:
-    r = client.get(path)
-    print(f'{r.status_code} {path}')
-"
+python3 app.py &
+APP_PID=$!
+sleep 2
+curl -s http://localhost:5000/
+curl -s http://localhost:5000/health
+curl -s http://localhost:5000/tasks | python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d)} tasks')"
+curl -s http://localhost:5000/users | python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d)} users')"
+curl -s http://localhost:5000/categories | python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d)} categories')"
+kill $APP_PID 2>/dev/null
 ```
