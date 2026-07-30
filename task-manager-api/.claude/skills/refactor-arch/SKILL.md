@@ -21,9 +21,15 @@ Utilize `references/analysis_heuristics.md` para:
 
 ## Fase 2 — Auditoria (Architecture Audit)
 Utilize `references/anti_patterns.md` e `references/audit_template.md` para:
-1. Analisar a codebase em busca de anti-patterns (CRITICAL a LOW).
+1. Analisar a codebase em busca de anti-patterns (CRITICAL a LOW) sobre o código **legado atual** (antes de qualquer modificação).
 2. Gerar um relatório estruturado seguindo `references/audit_template.md`.
-3. **OBRIGATÓRIO:** Pausar e solicitar confirmação do usuário antes de proceder para a fase de refatoração.
+3. **OBRIGATÓRIO — Salvar o relatório ANTES de refatorar:**
+   - Escreva o relatório completo em `reports/audit-project-{N}.md` onde:
+     - `N = 1` para o projeto `code-smells-project`
+     - `N = 2` para o projeto `ecommerce-api-legacy`
+     - `N = 3` para o projeto `task-manager-api`
+   - O relatório deve refletir o código **legado**, não o código refatorado.
+4. **OBRIGATÓRIO:** Pausar e solicitar confirmação do usuário antes de proceder para a fase de refatoração.
    - Pergunta: "Phase 2 complete. Proceed with refactoring (Phase 3)? [y/n]"
 
 ---
