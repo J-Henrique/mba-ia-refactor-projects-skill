@@ -564,9 +564,9 @@ Para garantir que a skill funciona em Python e Node.js, as seguintes decisões f
 | Projeto | CRITICAL | HIGH | MEDIUM | LOW | Total |
 |---------|:--------:|:----:|:------:|:---:|:-----:|
 | code-smells-project | 3 | 2 | 3 | 1 | **9** |
-| ecommerce-api-legacy | 2 | 2 | 2 | 1 | **7** |
+| ecommerce-api-legacy | 3 | 2 | 4 | 2 | **11** |
 | task-manager-api | 2 | 3 | 5 | 3 | **13** |
-| **Total** | **7** | **7** | **10** | **5** | **29** |
+| **Total** | **8** | **7** | **12** | **6** | **33** |
 
 ### Comparação Antes/Depois
 
@@ -595,11 +595,13 @@ Antes:                              Depois:
 Antes:                              Depois:
 ├── src/                             ├── src/
 │   ├── app.js                       │   ├── app.js
-│   ├── AppManager.js   (500 linhas) │   ├── config/config.js
+│   ├── AppManager.js   (141 linhas) │   ├── config/config.js
 │   └── utils.js                     │   ├── controllers/
 │   └── package.json                 │   │   ├── CheckoutController.js
                                      │   │   ├── ReportController.js
                                      │   │   └── UserController.js
+                                     │   ├── middlewares/
+                                     │   │   └── errorHandler.js
                                      │   ├── models/Database.js
                                      │   ├── routes/index.js
                                      │   └── utils/security.js
@@ -692,10 +694,10 @@ Antes:                              Depois:
 **ecommerce-api-legacy**
 * 4 endpoints testados via HTTP real (porta 3000):
 ```
-✅ POST /api/checkout              200  Sucesso
-✅ POST /api/checkout (denied)     400  Pagamento recusado
-✅ GET /api/admin/financial-report  200  2 courses
-✅ DELETE /api/users/1              200  JSON ✅
+✅ POST /api/checkout              200  {"msg":"Sucesso","enrollment_id":2}
+✅ POST /api/checkout (denied)     400  {"error":"Pagamento recusado"}
+✅ GET /api/admin/financial-report  200  [{"course":"Clean Architecture","revenue":997,"students":[...]}]
+✅ DELETE /api/users/1              200  {"message":"Usuário deletado com sucesso"}
 ```
 * Screenshot de log de execução de 3 endpoints:
 
