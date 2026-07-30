@@ -21,6 +21,8 @@ ecommerce-api-legacy/
 │   │   ├── CheckoutController.js
 │   │   ├── ReportController.js
 │   │   └── UserController.js
+│   ├── middlewares/
+│   │   └── errorHandler.js       # Tratamento centralizado de erros
 │   ├── models/
 │   │   └── Database.js           # Inicialização SQLite + seed
 │   ├── routes/

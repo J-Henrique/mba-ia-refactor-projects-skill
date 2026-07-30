@@ -649,7 +649,7 @@ Antes:                              Depois:
 | **Fase 2 — Relatório segue template** | ✅ | ✅ | ✅ |
 | **Fase 2 — Finding c/ arquivo:linha** | ✅ | ✅ | ✅ |
 | **Fase 2 — Ordenado CRITICAL→LOW** | ✅ | ✅ | ✅ |
-| **Fase 2 — Mínimo 5 findings** | ✅ 9 | ✅ 7 | ✅ 13 |
+| **Fase 2 — Mínimo 5 findings** | ✅ 9 | ✅ 11 | ✅ 13 |
 | **Fase 2 — APIs deprecated** | ✅ | ✅ | ✅ |
 | **Fase 2 — Pausa p/ confirmação** | ✅ | ✅ | ✅ |
 | **Fase 3 — Estrutura MVC** | ✅ | ✅ | ✅ |
