@@ -564,9 +564,9 @@ Para garantir que a skill funciona em Python e Node.js, as seguintes decisões f
 | Projeto | CRITICAL | HIGH | MEDIUM | LOW | Total |
 |---------|:--------:|:----:|:------:|:---:|:-----:|
 | code-smells-project | 3 | 2 | 3 | 1 | **9** |
-| ecommerce-api-legacy | 3 | 2 | 4 | 2 | **11** |
+| ecommerce-api-legacy | 2 | 4 | 3 | 2 | **11** |
 | task-manager-api | 2 | 3 | 5 | 3 | **13** |
-| **Total** | **8** | **7** | **12** | **6** | **33** |
+| **Total** | **7** | **9** | **11** | **6** | **33** |
 
 ### Comparação Antes/Depois
 
@@ -602,7 +602,13 @@ Antes:                              Depois:
                                      │   │   └── UserController.js
                                      │   ├── middlewares/
                                      │   │   └── errorHandler.js
-                                     │   ├── models/Database.js
+                                     │   ├── models/
+                                     │   │   ├── Database.js
+                                     │   │   ├── UserModel.js
+                                     │   │   ├── CourseModel.js
+                                     │   │   ├── EnrollmentModel.js
+                                     │   │   ├── PaymentModel.js
+                                     │   │   └── AuditLogModel.js
                                      │   ├── routes/index.js
                                      │   └── utils/security.js
                                      └── package.json

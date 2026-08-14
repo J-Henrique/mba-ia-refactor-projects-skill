@@ -24,7 +24,12 @@ ecommerce-api-legacy/
 │   ├── middlewares/
 │   │   └── errorHandler.js       # Tratamento centralizado de erros
 │   ├── models/
-│   │   └── Database.js           # Inicialização SQLite + seed
+│   │   ├── Database.js           # Inicialização SQLite + seed
+│   │   ├── UserModel.js          # CRUD de usuários
+│   │   ├── CourseModel.js        # Consultas de cursos
+│   │   ├── EnrollmentModel.js    # Matrículas com JOIN
+│   │   ├── PaymentModel.js       # Pagamentos
+│   │   └── AuditLogModel.js      # Logs de auditoria
 │   ├── routes/
 │   │   └── index.js              # Definição de endpoints (Router)
 │   └── utils/
