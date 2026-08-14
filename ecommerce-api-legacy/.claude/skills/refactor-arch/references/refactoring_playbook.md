@@ -11,7 +11,9 @@ Cada padrão apresenta exemplos de código **antes** (legado) e **depois** (refa
 **Severidade:** CRITICAL
 **Anti-pattern:** Hardcoded Credentials
 
-### Antes
+> ⚠️ **Regra fundamental:** O fallback de `os.environ.get()` ou `process.env` NUNCA pode conter credenciais reais. Use string vazia ou um placeholder óbvio (`'CHANGE_ME'`). Se a variável de ambiente não estiver configurada, a aplicação deve falhar ao iniciar — não usar um valor real "só para funcionar".
+
+### Antes — ❌ Errado (credenciais reais no código)
 
 **Python/Flask — `app.py`:**
 ```python
@@ -25,14 +27,14 @@ const GATEWAY_KEY = 'sk_live_1234567890abcdef';
 const DB_PASSWORD = 'admin123';
 ```
 
-### Depois
+### Depois — ✅ Correto (valores placeholder ou sem fallback)
 
 **Python/Flask — `config/settings.py`:**
 ```python
 import os
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY')
+    SECRET_KEY = os.environ.get('SECRET_KEY')  # sem fallback — falha se não configurado
     DATABASE_URI = os.environ.get('DATABASE_URI', 'sqlite:///data.db')
     DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
 ```
@@ -44,13 +46,71 @@ require('dotenv').config();
 module.exports = {
     gatewayKey: process.env.PAYMENT_GATEWAY_KEY,
     dbPassword: process.env.DB_PASSWORD,
-    port: process.env.PORT || 3000,
+    port: parseInt(process.env.PORT, 10) || 3000,
 };
+```
+
+### ❌ Padrão incorreto — não fazer
+
+```javascript
+// ERRO: fallback com credencial REAL — mesma vulnerabilidade que ter hardcoded
+gatewayKey: process.env.PAYMENT_GATEWAY_KEY || 'pk_live_1234567890abcdef',
+dbPass: process.env.DB_PASS || 'senha_super_secreta_prod_123',
 ```
 
 ---
 
-## 2. Extração de Lógica de Controller (Fat Controller → MVC)
+## 2. Remoção de Log de Dados Sensíveis
+
+**Severidade:** HIGH
+**Anti-pattern:** Sensitive Data Logging
+
+> ⚠️ **Regra fundamental:** NUNCA logar números de cartão de crédito completos, senhas, chaves de API ou tokens de autenticação. Quando necessário para auditoria, mascare os dados (ex: exibir apenas os 4 últimos dígitos).
+
+### Antes — ❌ Errado (dados sensíveis no log)
+
+**Node.js/Express — `CheckoutController.js`:**
+```javascript
+console.log(`Processando cartão ${card} na chave ${paymentGatewayKey}`);
+console.log(`Salvando no cache: ${key}`);
+```
+
+**Python/Flask — `controllers.py`:**
+```python
+print(f"Processando pagamento: cartao {card_number}, chave {gateway_key}")
+```
+
+### Depois — ✅ Correto (logs sanitizados ou removidos)
+
+**Node.js/Express — `CheckoutController.js`:**
+```javascript
+// ✅ Remove log de dados sensíveis completamente
+// Se precisar de auditoria, use apenas os 4 últimos dígitos:
+console.log(`Processando pagamento para cartão terminado em ${card.slice(-4)}`);
+
+// ✅ Log estruturado sem dados sensíveis (se necessário para debug)
+logger.info('Checkout iniciado', {
+    userId: user.id,
+    courseId,
+    enrollmentId,
+});
+```
+
+**Python/Flask — `controllers/produto_controller.py`:**
+```python
+import logging
+logger = logging.getLogger(__name__)
+
+# ✅ Use logger estruturado em vez de print
+logger.info('Checkout processado', extra={
+    'usuario_id': user_id,
+    'curso_id': curso_id,
+})
+```
+
+---
+
+## 3. Extração de Lógica de Controller (Fat Controller → MVC)
 
 **Severidade:** HIGH
 **Anti-pattern:** Fat Controller
@@ -133,7 +193,7 @@ class CheckoutController {
 
 ---
 
-## 3. Extração de Model (God Class → Models)
+## 4. Extração de Model (God Class → Models)
 
 **Severidade:** CRITICAL
 **Anti-pattern:** God Class
@@ -229,7 +289,7 @@ module.exports = Database;
 
 ---
 
-## 4. Implementação de Middleware / Error Handler Centralizado
+## 5. Implementação de Middleware / Error Handler Centralizado
 
 **Severidade:** MEDIUM
 **Anti-pattern:** Tratamento de erros inconsistente
@@ -297,7 +357,7 @@ module.exports = errorHandler;
 
 ---
 
-## 5. Substituição de API Deprecated / Criptografia Insegura
+## 6. Substituição de API Deprecated / Criptografia Insegura
 
 **Severidade:** HIGH
 **Anti-pattern:** Deprecated API
@@ -356,7 +416,7 @@ module.exports = { hashPassword, comparePassword };
 
 ---
 
-## 6. Injeção de Dependência
+## 7. Injeção de Dependência
 
 **Severidade:** HIGH
 **Anti-pattern:** Tight Coupling
@@ -417,7 +477,7 @@ const checkoutController = new CheckoutController(db);
 
 ---
 
-## 7. Centralização de Configurações
+## 8. Centralização de Configurações
 
 **Severidade:** MEDIUM
 **Anti-pattern:** Configurações dispersas
@@ -474,7 +534,7 @@ module.exports = {
 
 ---
 
-## 8. Remoção de Duplicate Code
+## 9. Remoção de Duplicate Code
 
 **Severidade:** MEDIUM
 **Anti-pattern:** Duplicate Code
@@ -559,7 +619,7 @@ app.post('/api/checkout', requireAuth, checkoutController.checkout);
 
 ---
 
-## 9. Correção de SQL Injection
+## 10. Correção de SQL Injection
 
 **Severidade:** CRITICAL
 **Anti-pattern:** SQL Injection
@@ -604,7 +664,7 @@ class Database {
 
 ---
 
-## 10. Correção de N+1 Queries
+## 11. Correção de N+1 Queries
 
 **Severidade:** MEDIUM
 **Anti-pattern:** N+1 Queries

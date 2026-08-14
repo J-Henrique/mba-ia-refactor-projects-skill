@@ -14,3 +14,4 @@ Este catálogo lista os anti-patterns que a skill `refactor-arch` deve identific
 | Magic Numbers | LOW | Valores numéricos sem significado claro no código. | Dificulta a compreensão. |
 | Inconsistent Naming | LOW | Nomenclatura que não segue padrões da linguagem. | Baixa legibilidade. |
 | Deprecated API Usage | MEDIUM | Uso de bibliotecas ou métodos obsoletos (ex: `hashlib.md5`). | Risco de segurança/incompatibilidade. |
+| Sensitive Data Logging | HIGH | Números de cartão de crédito, senhas ou chaves de API logados em texto puro. | Violação de PCI-DSS, expõe credenciais em logs. |
