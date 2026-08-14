@@ -1,19 +1,13 @@
 const express = require('express');
-const Database = require('./models/Database');
-const createRouter = require('./routes/index');
-const errorHandler = require('./middlewares/errorHandler');
-const { config } = require('./config/config');
+const AppManager = require('./AppManager');
+const { config } = require('./utils');
 
 const app = express();
 app.use(express.json());
 
-const db = new Database();
-db.init();
-
-app.use(createRouter(db));
-
-// Centralized error handler
-app.use(errorHandler);
+const manager = new AppManager();
+manager.initDb();
+manager.setupRoutes(app);
 
 app.listen(config.port, () => {
     console.log(`Frankenstein LMS rodando na porta ${config.port}...`);
